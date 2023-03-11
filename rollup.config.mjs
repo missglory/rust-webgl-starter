@@ -1,4 +1,5 @@
 import rust from "@wasm-tool/rollup-plugin-rust";
+import serve from 'rollup-plugin-serve'
 
 export default {
     input: {
@@ -13,5 +14,9 @@ export default {
         rust({
             serverPath: "/js/",
         }),
+        serve({
+            contentBase: 'dist',
+            port: 9000
+        })
     ],
 };

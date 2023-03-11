@@ -11,5 +11,8 @@
     "@wasm-tool/rollup-plugin-rust": "^2.3.3",
     "rimraf": "^3.0.2",
     "rollup": "^2.0.0"
+  },
+  "dependencies": {
+    "rollup-plugin-serve": "^2.0.2"
   }
 }
