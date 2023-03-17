@@ -183,7 +183,7 @@ pub fn start() -> Result<(), JsValue> {
             .unwrap();
             // Schedule ourself for another requestAnimationFrame callback.
             request_animation_frame(f.borrow().as_ref().unwrap());
-        }) as Box<FnMut(f32)>));
+        }) as Box<dyn FnMut(f32)>));
 
         request_animation_frame(g.borrow().as_ref().unwrap());
     }
@@ -326,7 +326,6 @@ fn drawScene(
     theta: f32,
     phi: f32,
 ) -> Result<(), JsValue> {
-    use std::f32::consts::PI;
     let Buffers(positionBuffer, colorBuffer, indexBuffer) = buffers;
     let ProgramInfo(
         shaderProgram,
