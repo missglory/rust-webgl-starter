@@ -9,7 +9,7 @@ use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::{
-    EventTarget, MouseEvent, WebGlBuffer, WebGlProgram, WebGlRenderingContext, WebGlUniformLocation,
+    EventTarget, MouseEvent, WheelEvent, WebGlBuffer, WebGlProgram, WebGlRenderingContext, WebGlUniformLocation,
 };
 
 #[allow(dead_code)]
@@ -102,6 +102,7 @@ pub fn start() -> Result<(), JsValue> {
     let drag = Rc::new(RefCell::new(false));
     let theta = Rc::new(RefCell::new(0.0));
     let phi = Rc::new(RefCell::new(0.0));
+    let scale: Rc<RefCell<f64>> = Rc::new(RefCell::new(1.0));
     let dX = Rc::new(RefCell::new(0.0));
     let dY = Rc::new(RefCell::new(0.0));
     let canvas_width = Rc::new(RefCell::new(canvas.width() as f32));
@@ -160,6 +161,17 @@ pub fn start() -> Result<(), JsValue> {
             .unwrap();
         mousemove_cb.forget();
     }
+    // MOUSEWHEEL
+    {
+        let scale = scale.clone();
+        let scale_cb = Closure::wrap(Box::new(move |event: WheelEvent| {
+            *scale.borrow_mut() += event.delta_y() * 0.001;
+        }) as Box<dyn FnMut(WheelEvent)>);
+        event_target.add_event_listener_with_callback("wheel", scale_cb.as_ref().unchecked_ref())
+            .unwrap();
+        scale_cb.forget();
+    }
+
     // RequestAnimationFrame
     {
         let dX = dX.clone();
@@ -179,6 +191,7 @@ pub fn start() -> Result<(), JsValue> {
                 buffers.clone(),
                 *theta.borrow(),
                 *phi.borrow(),
+                *scale.borrow()
             )
             .unwrap();
             // Schedule ourself for another requestAnimationFrame callback.
@@ -325,6 +338,7 @@ fn drawScene(
     buffers: Buffers,
     theta: f32,
     phi: f32,
+    scale: f64
 ) -> Result<(), JsValue> {
     let Buffers(positionBuffer, colorBuffer, indexBuffer) = buffers;
     let ProgramInfo(
@@ -384,6 +398,13 @@ fn drawScene(
         &mut modelViewMatrix, // destination matrix
         &mat_to_rotate,       // matrix to rotate
         &theta,
+    );
+    let mat_to_scale = modelViewMatrix.clone();
+    let s32 = scale as f32;
+    mat4::scale(
+        &mut modelViewMatrix, // destination matrix
+        &mat_to_scale,
+        &[s32, s32, s32]
     );
 
     // Tell WebGL how to pull out the positions from the position
