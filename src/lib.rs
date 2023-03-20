@@ -55,7 +55,9 @@ pub fn start() -> Result<(), JsValue> {
     varying lowp vec4 vColor;
 
     void main(void) {
-      gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
+      gl_Position = 
+        uProjectionMatrix * uModelViewMatrix * 
+        aVertexPosition;
       vColor = aVertexColor;
     }
   "#;
@@ -257,6 +259,7 @@ fn initBuffers(gl: &WebGlRenderingContext) -> Result<Buffers, JsValue> {
         -1.0, 1.0, 1.0, //
         -1.0, 1.0, -1.0, //
     ];
+    
     let position_array = float_32_array!(positions);
     // Now pass the list of positions into WebGL to build the
     // shape. We do this by creating a Float32Array from the
@@ -384,21 +387,21 @@ fn drawScene(
     mat4::translate(
         &mut modelViewMatrix, // destination matrix
         &mat_to_translate,    // matrix to translate
-        &[-0.0, 0.0, -6.0],
+        &[theta, -phi, -6.0],
     ); // amount to translate
 
-    let mat_to_rotate = modelViewMatrix.clone();
-    mat4::rotate_x(
-        &mut modelViewMatrix, // destination matrix
-        &mat_to_rotate,       // matrix to rotate
-        &phi,
-    );
-    let mat_to_rotate = modelViewMatrix.clone();
-    mat4::rotate_y(
-        &mut modelViewMatrix, // destination matrix
-        &mat_to_rotate,       // matrix to rotate
-        &theta,
-    );
+    // let mat_to_rotate = modelViewMatrix.clone();
+    // mat4::rotate_x(
+    //     &mut modelViewMatrix, // destination matrix
+    //     &mat_to_rotate,       // matrix to rotate
+    //     &phi,
+    // );
+    // let mat_to_rotate = modelViewMatrix.clone();
+    // mat4::rotate_y(
+    //     &mut modelViewMatrix, // destination matrix
+    //     &mat_to_rotate,       // matrix to rotate
+    //     &theta,
+    // );
     let mat_to_scale = modelViewMatrix.clone();
     let s32 = scale as f32;
     mat4::scale(
