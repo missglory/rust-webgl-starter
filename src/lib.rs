@@ -9,7 +9,7 @@ use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::{
-    EventTarget, MouseEvent, WheelEvent, WebGlBuffer, WebGlProgram, WebGlRenderingContext, WebGlUniformLocation,
+    EventTarget, MouseEvent, WheelEvent, TouchEvent, WebGlBuffer, WebGlProgram, WebGlRenderingContext, WebGlUniformLocation,
 };
 
 #[allow(dead_code)]
@@ -104,9 +104,11 @@ pub fn start() -> Result<(), JsValue> {
     let drag = Rc::new(RefCell::new(false));
     let theta = Rc::new(RefCell::new(0.0));
     let phi = Rc::new(RefCell::new(0.0));
-    let scale: Rc<RefCell<f64>> = Rc::new(RefCell::new(1.0));
+    let scale = Rc::new(RefCell::new(1.0 as f64));
     let dX = Rc::new(RefCell::new(0.0));
     let dY = Rc::new(RefCell::new(0.0));
+    let touchStartX = Rc::new(RefCell::new(0.0));
+    let touchStartY = Rc::new(RefCell::new(0.0));
     let canvas_width = Rc::new(RefCell::new(canvas.width() as f32));
     let canvas_height = Rc::new(RefCell::new(canvas.height() as f32));
 
@@ -163,6 +165,32 @@ pub fn start() -> Result<(), JsValue> {
             .unwrap();
         mousemove_cb.forget();
     }
+
+    // TOUCH
+    // {
+    //     let theta = theta.clone();
+    //     let phi = phi.clone();
+    //     let canvas_width = canvas_width.clone();
+    //     let canvas_height = canvas_height.clone();
+    //     let dX = dX.clone();
+    //     let dY = dY.clone();
+    //     let drag = drag.clone();
+    //     let mousemove_cb = Closure::wrap(Box::new(move |event: TouchEvent| {
+    //         if *drag.borrow() {
+    //             let cw = *canvas_width.borrow();
+    //             let ch = *canvas_height.borrow();
+    //             *dX.borrow_mut() = (event.movement_x() as f32) * 2.0 * PI / cw;
+    //             *dY.borrow_mut() = (event.movement_y() as f32) * 2.0 * PI / ch;
+    //             *theta.borrow_mut() += *dX.borrow();
+    //             *phi.borrow_mut() += *dY.borrow();
+    //         }
+    //     }) as Box<dyn FnMut(web_sys::MouseEvent)>);
+    //     event_target
+    //         .add_event_listener_with_callback("mousemove", mousemove_cb.as_ref().unchecked_ref())
+    //         .unwrap();
+    //     mousemove_cb.forget();
+    // }
+
     // MOUSEWHEEL
     {
         let scale = scale.clone();
@@ -170,6 +198,40 @@ pub fn start() -> Result<(), JsValue> {
             *scale.borrow_mut() += event.delta_y() * 0.001;
         }) as Box<dyn FnMut(WheelEvent)>);
         event_target.add_event_listener_with_callback("wheel", scale_cb.as_ref().unchecked_ref())
+            .unwrap();
+        scale_cb.forget();
+    }
+
+
+    // TOUCH
+    {
+        let touchStartX = touchStartX.clone();
+        let touchStartY = touchStartY.clone();
+        let theta = theta.clone();
+        let phi = phi.clone();
+        let canvas_width = canvas_width.clone();
+        let canvas_height = canvas_height.clone();
+        let scale_cb = Closure::wrap(Box::new(move |event: TouchEvent| {
+        *theta.borrow_mut() += (event.touches().get(0).unwrap().client_x() as f32 - *touchStartX.borrow()) / *canvas_width.borrow();
+        *phi.borrow_mut() += (event.touches().get(0).unwrap().client_y() as f32 - *touchStartY.borrow()) / *canvas_height.borrow();
+        let bound = 100.;
+        // *theta.borrow_mut() = num::clamp(*theta.borrow(), -bound, bound);
+        // *phi.borrow_mut() = num::clamp(*phi.borrow(), -bound, bound);
+
+        }) as Box<dyn FnMut(TouchEvent)>);
+        event_target.add_event_listener_with_callback("touchmove", scale_cb.as_ref().unchecked_ref())
+            .unwrap();
+        scale_cb.forget();
+    }
+
+    {
+        let touchStartX = touchStartX.clone();
+        let touchStartY = touchStartY.clone();
+        let scale_cb = Closure::wrap(Box::new(move |event: TouchEvent| {
+        *touchStartX.borrow_mut() = event.touches().get(0).unwrap().client_x() as f32;
+        *touchStartY.borrow_mut() = event.touches().get(0).unwrap().client_y() as f32;
+        }) as Box<dyn FnMut(TouchEvent)>);
+        event_target.add_event_listener_with_callback("touchstart", scale_cb.as_ref().unchecked_ref())
             .unwrap();
         scale_cb.forget();
     }
